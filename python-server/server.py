@@ -115,18 +115,19 @@ class WebSocketRelay:
 
             async def handle_browser_messages():
                 try:
-                    while True:
-                        message = await websocket.recv()
-                        try:
-                            event = json.loads(message)
-                            logger.info(f'Relaying "{event.get("type")}" to OpenAI')
-                            await openai_ws.send(message)
-                        except json.JSONDecodeError:
-                            logger.error(f"Invalid JSON from browser: {message}")
-                except websockets.exceptions.ConnectionClosed as e:
-                    logger.info(
-                        f"Browser connection closed normally: code={e.code}, reason={e.reason}"
-                    )
+                    async for msg in websocket:
+                        if msg.type == aiohttp.WSMsgType.TEXT:
+                            message = msg.data
+                            try:
+                                event = json.loads(message)
+                                logger.info(f'Relaying "{event.get("type")}" to OpenAI')
+                                await openai_ws.send(message)
+                            except json.JSONDecodeError:
+                                logger.error(f"Invalid JSON from browser: {message}")
+                        elif msg.type == aiohttp.WSMsgType.ERROR:
+                            logger.error(f"WebSocket connection closed with exception {websocket.exception()}")
+                except Exception as e:
+                    logger.info(f"Browser connection closed: {e}")
                     raise
 
             async def handle_openai_messages():
