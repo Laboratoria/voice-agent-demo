@@ -101,7 +101,7 @@ class WebSocketRelay:
 
             logger.info("Connected to OpenAI successfully!")
 
-            await websocket.send(json.dumps(session_created))
+            await websocket.send_str(json.dumps(session_created))
             logger.info("Forwarded session.created to browser")
 
             while self.message_queues[websocket]:
@@ -138,7 +138,7 @@ class WebSocketRelay:
                             logger.info(
                                 f'Relaying "{event.get("type")}" from OpenAI: {message}'
                             )
-                            await websocket.send(message)
+                            await websocket.send_str(message)
                         except json.JSONDecodeError:
                             logger.error(f"Invalid JSON from OpenAI: {message}")
                 except websockets.exceptions.ConnectionClosed as e:
@@ -157,7 +157,7 @@ class WebSocketRelay:
         except Exception as e:
             logger.error(f"Error handling connection: {str(e)}")
             if not websocket.closed:
-                await websocket.close(1011, str(e))
+                await websocket.close()
         finally:
             if websocket in self.connections:
                 if openai_ws and not openai_ws.closed:
@@ -166,7 +166,7 @@ class WebSocketRelay:
             if websocket in self.message_queues:
                 del self.message_queues[websocket]
             if not websocket.closed:
-                await websocket.close(1000, "Normal closure")
+                await websocket.close()
 
     async def serve(self):
         """Start the WebSocket relay server."""
