@@ -76,8 +76,9 @@ class WebSocketRelay:
         self.connections = {}
         self.message_queues = {}
 
+
     async def handle_browser_connection(
-        self, websocket: WebSocketServerProtocol, path: str
+        self, websocket: WebSocketServerProtocol, path: str, remote_address=None
     ):
         """Handle a connection from the browser."""
         base_path = path.split("?")[0]
@@ -86,7 +87,10 @@ class WebSocketRelay:
             await websocket.close(1008, "Invalid path")
             return
 
-        logger.info(f"Browser connected from {websocket.remote_address}")
+        if remote_address is not None:
+            logger.info(f"Browser connected from {remote_address}")
+        else:
+            logger.info(f"Browser connected (no remote address available)")
         self.message_queues[websocket] = []
         openai_ws = None
 
@@ -185,8 +189,8 @@ async def websocket_handler(request):
     ws = web.WebSocketResponse(protocols=["realtime"])
     await ws.prepare(request)
     relay = request.app["relay"]
-    # For /ws, pass "/" as path to keep logic compatible
-    await relay.handle_browser_connection(ws, "/")
+    remote_addr = request.remote
+    await relay.handle_browser_connection(ws, "/", remote_address=remote_addr)
     return ws
 
 
