@@ -180,14 +180,15 @@ class WebSocketRelay:
 
 
 # --- HTTP + WebSocket server with aiohttp ---
+
 async def websocket_handler(request):
     ws = web.WebSocketResponse(protocols=["realtime"])
     await ws.prepare(request)
-    # Adapt the handler to use the same logic as WebSocketRelay
     relay = request.app["relay"]
-    # aiohttp passes the path as request.path
-    await relay.handle_browser_connection(ws, request.path)
+    # For /ws, pass "/" as path to keep logic compatible
+    await relay.handle_browser_connection(ws, "/")
     return ws
+
 
 def create_app():
     app = web.Application()
@@ -196,8 +197,8 @@ def create_app():
     # Servir archivos estáticos desde ./public en la raíz
     public_dir = os.path.join(os.path.dirname(__file__), "public")
     app.router.add_static("/", public_dir, show_index=True)
-    # WebSocket en la raíz (solo si es protocolo ws)
-    app.router.add_route("GET", "/", websocket_handler)
+    # WebSocket en /ws
+    app.router.add_route("GET", "/ws", websocket_handler)
     return app
 
 def main():
