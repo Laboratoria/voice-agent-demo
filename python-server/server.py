@@ -133,6 +133,7 @@ class WebSocketRelay:
             async def handle_openai_messages():
                 try:
                     while True:
+                        # openai_ws es de websockets, sí tiene .recv()
                         message = await openai_ws.recv()
                         try:
                             event = json.loads(message)
@@ -142,10 +143,8 @@ class WebSocketRelay:
                             await websocket.send_str(message)
                         except json.JSONDecodeError:
                             logger.error(f"Invalid JSON from OpenAI: {message}")
-                except websockets.exceptions.ConnectionClosed as e:
-                    logger.info(
-                        f"OpenAI connection closed normally: code={e.code}, reason={e.reason}"
-                    )
+                except Exception as e:
+                    logger.info(f"OpenAI connection closed: {e}")
                     raise
 
             try:
