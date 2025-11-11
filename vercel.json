@@ -1,0 +1,6 @@
+{
+  "routes": [
+    { "src": "/api/(.*)", "dest": "node-server/$1" },
+    { "src": "/(.*)", "dest": "client/$1" }
+  ]
+}

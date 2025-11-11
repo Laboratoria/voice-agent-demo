@@ -1,0 +1,41 @@
+{
+  "$schema": "https://open.mcp.dev/schema/v1alpha1/project.json",
+  "name": "voice-agent-demo",
+  "description": "Demo de agente de voz con OpenAI y Recall.ai",
+  "services": [
+    {
+      "name": "client",
+      "type": "static",
+      "root": "client",
+      "buildCommand": "npm install && npm run build",
+      "outputDirectory": "dist",
+      "static": true,
+      "framework": "vite"
+    },
+    {
+      "name": "node-server",
+      "type": "node",
+      "root": "node-server",
+      "buildCommand": "npm install",
+      "startCommand": "node index.js",
+      "outputDirectory": ".",
+      "env": [
+        {
+          "name": "OPENAI_API_KEY",
+          "description": "Tu clave de API de OpenAI",
+          "required": true
+        }
+      ],
+      "framework": null
+    }
+  ],
+  "settings": {
+    "env": [
+      {
+        "name": "VITE_LOCAL_RELAY_SERVER_URL",
+        "description": "URL WSS pública de tu backend relay (ngrok o producción)",
+        "required": false
+      }
+    ]
+  }
+}
