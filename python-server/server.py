@@ -1,11 +1,14 @@
+
 import asyncio
 import json
 import logging
 import os
 from dotenv import load_dotenv
 import websockets
-from websockets.legacy.server import WebSocketServerProtocol, serve
+from websockets.legacy.server import WebSocketServerProtocol
 from websockets.legacy.client import connect
+from aiohttp import web
+import aiohttp
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -175,16 +178,32 @@ class WebSocketRelay:
             await asyncio.Future()
 
 
-def main():
-    """Main entry point for the WebSocket relay server."""
-    relay = WebSocketRelay()
-    try:
-        asyncio.run(relay.serve())
-    except KeyboardInterrupt:
-        logger.info("Server shutdown requested")
-    finally:
-        logger.info("Server shutdown complete")
 
+# --- HTTP + WebSocket server with aiohttp ---
+async def websocket_handler(request):
+    ws = web.WebSocketResponse(protocols=["realtime"])
+    await ws.prepare(request)
+    # Adapt the handler to use the same logic as WebSocketRelay
+    relay = request.app["relay"]
+    # aiohttp passes the path as request.path
+    await relay.handle_browser_connection(ws, request.path)
+    return ws
+
+def create_app():
+    app = web.Application()
+    relay = WebSocketRelay()
+    app["relay"] = relay
+    # Servir archivos estáticos desde ./public en la raíz
+    public_dir = os.path.join(os.path.dirname(__file__), "public")
+    app.router.add_static("/", public_dir, show_index=True)
+    # WebSocket en la raíz (solo si es protocolo ws)
+    app.router.add_route("GET", "/", websocket_handler)
+    return app
+
+def main():
+    app = create_app()
+    port = PORT
+    web.run_app(app, host="0.0.0.0", port=port)
 
 if __name__ == "__main__":
-    main() 
+    main()
