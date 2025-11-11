@@ -46,17 +46,33 @@ async def connect_to_openai():
                 raise Exception(f"Expected session.created, got {event.get('type')}")
             logger.info("Received session.created response")
 
+
+            # Estructura correcta para setear la voz en realtime
             update_session = {
                 "type": "session.update",
                 "session": {
-                    "input_audio_format": "pcm16",
-                    "output_audio_format": "pcm16",
                     "modalities": ["text", "audio"],
-                    "voice": "shimmer",
-                },
+                    "audio": {
+                        "input": {
+                            "format": {
+                                "type": "audio/pcm",
+                                "rate": 24000
+                            },
+                            "turn_detection": {
+                                "type": "semantic_vad"
+                            }
+                        },
+                        "output": {
+                            "format": {
+                                "type": "audio/pcm"
+                            },
+                            "voice": "nova"
+                        }
+                    }
+                }
             }
             await ws.send(json.dumps(update_session))
-            logger.info("Sent session.create message")
+            logger.info("Sent session.update message with voice 'coral'")
 
             return (
                 ws,
